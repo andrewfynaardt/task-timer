@@ -9,6 +9,9 @@ This file is the main file for the task-timer
 import click
 import pickle
 import time
+from pathlib import Path
+
+filepath = Path(__file__).parent / "tasks.pkl"
 
 class Task:
     def __init__(self, name):
@@ -47,6 +50,9 @@ class Task:
 
     def get_name(self):
         return self.name
+    
+    def is_running(self):
+        return self.running
 
 @click.group()
 def main():
@@ -59,7 +65,7 @@ def main():
 def timer(task_name, start, end):
     string = "Task name: " + task_name
     click.echo(string)
-    tasks = pickle.load(open("tasks.pkl", "rb"))
+    tasks = pickle.load(open(filepath, "rb"))
     if task_name not in tasks:
         task = Task(task_name)
         tasks[task_name] = task
@@ -73,24 +79,34 @@ def timer(task_name, start, end):
     else:
         click.echo("Please specify either --start or --end.")
 
-    pickle.dump(tasks, open("tasks.pkl", "wb"))
+    pickle.dump(tasks, open(filepath, "wb"))
     return
 
 @main.command()
 @click.option("--task_name", help="A specific task you want to view.")
 @click.option("--all", is_flag=True, help="View all tasks.")
+@click.option("--running", is_flag=True, help="View only running tasks.")
 def view(task_name, all):
-    tasks = pickle.load(open("tasks.pkl", "rb"))
+    tasks = pickle.load(open(filepath, "rb"))
     if task_name:
         string = "\"" + task_name + "\" has been worked on for " + str(tasks[task_name].get_total_time()) + " seconds."
         click.echo(tasks[task_name])
-    else:
+    elif all:
         for task in tasks.values():
             string = "\"" + task.get_name() + "\" has been worked on for " + str(task.get_total_time()) + " seconds."
             click.echo(string)
+    else:
+        for task in tasks.values():
+            if task.is_running():
+                string = "\"" + task.get_name() + "\" has been worked on for " + str(task.get_total_time()) + " seconds."
+                click.echo(string)
     return 
 
 @main.command()
+def export():
+    pass
+
+@main.command()
 def init():
-    pickle.dump({}, open("tasks.pkl", "wb")) 
+    pickle.dump({}, open(filepath, "wb")) 
     return   
