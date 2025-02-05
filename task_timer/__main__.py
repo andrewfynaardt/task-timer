@@ -9,9 +9,11 @@ This file is the main file for the task-timer
 import click
 import pickle
 import time
+import csv
 from pathlib import Path
 
 filepath = Path(__file__).parent / "tasks.pkl"
+test_filepath = Path(__file__).parent / "test_tasks.pkl"
 
 class Task:
     def __init__(self, name):
@@ -51,8 +53,26 @@ class Task:
     def get_name(self):
         return self.name
     
+    def set_name(self, name):
+        self.name = name
+        return
+    
     def is_running(self):
         return self.running
+    
+    def get_start_times(self):
+        return self.start_times
+    
+    def set_start_times(self, start_times):
+        self.start_times = start_times
+        return
+    
+    def get_end_times(self):
+        return self.end_times
+    
+    def set_end_times(self, end_times):
+        self.end_times = end_times
+        return
 
 @click.group()
 def main():
@@ -83,30 +103,41 @@ def timer(task_name, start, end):
     return
 
 @main.command()
-@click.option("--task_name", help="A specific task you want to view.")
-@click.option("--all", is_flag=True, help="View all tasks.")
-@click.option("--running", is_flag=True, help="View only running tasks.")
-def view(task_name, all):
+@click.option("-t", "--task", help="A specific task you want to view.")
+@click.option("-r", "--running", is_flag=True, help="View only running tasks.")
+def view(task_name, running):
     tasks = pickle.load(open(filepath, "rb"))
     if task_name:
         string = "\"" + task_name + "\" has been worked on for " + str(tasks[task_name].get_total_time()) + " seconds."
         click.echo(tasks[task_name])
-    elif all:
-        for task in tasks.values():
-            string = "\"" + task.get_name() + "\" has been worked on for " + str(task.get_total_time()) + " seconds."
-            click.echo(string)
-    else:
+    elif running:
         for task in tasks.values():
             if task.is_running():
                 string = "\"" + task.get_name() + "\" has been worked on for " + str(task.get_total_time()) + " seconds."
                 click.echo(string)
+    else:
+        for task in tasks.values():
+            string = "\"" + task.get_name() + "\" has been worked on for " + str(task.get_total_time()) + " seconds."
+            click.echo(string)
     return 
 
 @main.command()
-def export():
-    pass
+@click.option("-o", "--output", default="timesheet", help="The file you want to export to.")
+def export(output):
+    tasks = pickle.load(open(filepath, "rb"))
+    with open(Path(__file__).parent / f"{output}.csv", "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Task Name", "Total Time", "Start Times", "End Times"])
+        for task in tasks.values():
+            writer.writerow([task.get_name(), task.get_total_time(), task.get_start_times(), task.get_end_times()])
+    return
 
 @main.command()
-def init():
-    pickle.dump({}, open(filepath, "wb")) 
+@click.option("-t","--test", is_flag=True, help="Initialize with test data.")
+def init(test):
+    if test:
+        tasks = pickle.load(open(test_filepath, "rb"))
+    else:
+        tasks = {}
+    pickle.dump(tasks, open(filepath, "wb")) 
     return   
