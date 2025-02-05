@@ -27,17 +27,11 @@ class Task:
         if not self.running:
             self.running = True
             self.start_times.append(time.time())
-            click.echo("Task timing started.")
-        else:
-            click.echo("This tasks timer has already started.")
 
     def end(self):
         if self.running: 
             self.running = False
             self.end_times.append(time.time())
-            click.echo("Task timing ended.")
-        else:
-            click.echo("This task's timer is not running.")
 
     def get_total_time(self):
         self.total_time = 0
@@ -81,7 +75,12 @@ def main():
 @main.command()
 @click.argument("task_name")
 def start(task_name):
-    tasks = pickle.load(open(filepath, "rb"))
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        init()
+        tasks = pickle.load(open(filepath, "rb"))
+
     if task_name not in tasks:
         task = Task(task_name)
         tasks[task_name] = task
@@ -113,10 +112,14 @@ def stop(task_name):
     return
 
 @main.command()
-@click.option("-t", "--task", help="A specific task you want to view.")
+@click.option("-t", "--task_name", help="A specific task you want to view.")
 @click.option("-r", "--running", is_flag=True, help="View only running tasks.")
 def view(task_name, running):
-    tasks = pickle.load(open(filepath, "rb"))
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        click.echo("No timesheet found.")
+        return
     if task_name:
         string = "\"" + task_name + "\" has been worked on for " + str(tasks[task_name].get_total_time()) + " seconds."
         click.echo(tasks[task_name])
@@ -134,7 +137,11 @@ def view(task_name, running):
 @main.command()
 @click.option("-o", "--out", default="timesheet", help="The file you want to export to.")
 def export(out):
-    tasks = pickle.load(open(filepath, "rb"))
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        click.echo("No timesheet found.")
+        return
     with open(Path(__file__).parent / f"{out}.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Task Name", "Total Time", "Start Times", "End Times"])
