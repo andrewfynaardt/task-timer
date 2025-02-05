@@ -94,6 +94,3 @@ def view(task_name, all):
 def init():
     pickle.dump({}, open("tasks.pkl", "wb")) 
     return   
-
-if __name__ == "__main__":
-    main()
