@@ -153,14 +153,14 @@ def rename(task_name, new_name):
 
 @main.command()
 @click.argument("task_name")
-@click.argument("-a", "--all", is_flag=True, help="Delete all tasks.")
-def delete(task_name):
+@click.option("-a", "--all_", is_flag=True, help="Delete all tasks.")
+def delete(task_name, all_):
     try:
         tasks = pickle.load(open(filepath, "rb"))
     except:
         click.echo("No timesheet found.")
         return
-    if all:
+    if all_:
         init()
         click.echo("Deleted all tasks.")
         return
@@ -208,15 +208,16 @@ def export(out):
         writer = csv.writer(file)
         writer.writerow(["Task Name", "Total Time", "Start Times", "End Times"])
         for task in tasks.values():
+            task.end()
             writer.writerow([task.get_name(), task.get_total_time(), task.get_start_times(), task.get_end_times()])
     return
 
 @main.command()
-@click.option("-t","--test", is_flag=True, help="Initialize with test data.")
+@click.option("-t", "--test", is_flag=True, help="Initialize with test data.")
 def init(test):
     if test:
         tasks = pickle.load(open(test_filepath, "rb"))
     else:
         tasks = {}
     pickle.dump(tasks, open(filepath, "wb")) 
-    return   
+    return
