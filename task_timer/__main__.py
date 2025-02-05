@@ -80,24 +80,34 @@ def main():
 
 @main.command()
 @click.argument("task_name")
-@click.option("--start", is_flag=True, help="Start timing the task.")
-@click.option("--end", is_flag=True, help="End timing the task.")
-def timer(task_name, start, end):
-    string = "Task name: " + task_name
-    click.echo(string)
+def start(task_name):
     tasks = pickle.load(open(filepath, "rb"))
     if task_name not in tasks:
         task = Task(task_name)
         tasks[task_name] = task
+        click.echo(f"Created \"{task_name}\".")
     else:
         task = tasks[task_name]
+        click.echo(f"Resuming \"{task_name}\".")
 
-    if start and not end:
-        task.start()
-    elif end and not start:
-        task.end()
-    else:
-        click.echo("Please specify either --start or --end.")
+    task.start()
+
+    pickle.dump(tasks, open(filepath, "wb"))
+    return
+
+@main.command()
+@click.argument("task_name")
+def stop(task_name):
+    tasks = pickle.load(open(filepath, "rb"))
+    if task_name not in tasks:
+        click.echo(f"\"{task_name}\" does not exist.")
+        return
+    task = tasks[task_name]
+    if not task.is_running():
+        click.echo(f"\"{task_name}\" is not running.")
+        return
+    task.end()
+    click.echo(f"Stopped timing \"{task_name}\".")
 
     pickle.dump(tasks, open(filepath, "wb"))
     return
@@ -122,10 +132,10 @@ def view(task_name, running):
     return 
 
 @main.command()
-@click.option("-o", "--output", default="timesheet", help="The file you want to export to.")
-def export(output):
+@click.option("-o", "--out", default="timesheet", help="The file you want to export to.")
+def export(out):
     tasks = pickle.load(open(filepath, "rb"))
-    with open(Path(__file__).parent / f"{output}.csv", "w", newline="") as file:
+    with open(Path(__file__).parent / f"{out}.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Task Name", "Total Time", "Start Times", "End Times"])
         for task in tasks.values():
