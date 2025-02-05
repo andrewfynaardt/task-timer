@@ -112,6 +112,68 @@ def stop(task_name):
     return
 
 @main.command()
+@click.argument("task_name")
+def undo(task_name):
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        click.echo("No timesheet found.")
+        return
+    if task_name not in tasks:
+        click.echo(f"\"{task_name}\" does not exist.")
+        return
+    task = tasks[task_name]
+    task.end()
+    task.set_start_times(task.get_start_times()[:-1])
+    task.set_end_times(task.get_end_times()[:-1])
+
+    pickle.dump(tasks, open(filepath, "wb"))
+    return
+
+@main.command()
+@click.argument("task_name")
+@click.argument("new_name")
+def rename(task_name, new_name):
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        click.echo("No timesheet found.")
+        return
+    if task_name not in tasks:
+        click.echo(f"\"{task_name}\" does not exist.")
+        return
+    task = tasks[task_name]
+    task.set_name(new_name)
+    tasks[new_name] = task
+    del tasks[task_name]
+    click.echo(f"Renamed \"{task_name}\" to \"{new_name}\".")
+
+    pickle.dump(tasks, open(filepath, "wb"))
+    return
+
+@main.command()
+@click.argument("task_name")
+@click.argument("-a", "--all", is_flag=True, help="Delete all tasks.")
+def delete(task_name):
+    try:
+        tasks = pickle.load(open(filepath, "rb"))
+    except:
+        click.echo("No timesheet found.")
+        return
+    if all:
+        init()
+        click.echo("Deleted all tasks.")
+        return
+    if task_name not in tasks:
+        click.echo(f"\"{task_name}\" does not exist.")
+        return
+    del tasks[task_name]
+    click.echo(f"Deleted \"{task_name}\".")
+
+    pickle.dump(tasks, open(filepath, "wb"))
+    return
+
+@main.command()
 @click.option("-t", "--task_name", help="A specific task you want to view.")
 @click.option("-r", "--running", is_flag=True, help="View only running tasks.")
 def view(task_name, running):
